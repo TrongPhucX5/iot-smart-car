@@ -8,10 +8,10 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="PLACEHOLDER" />
-                  <option name="mobileSdkAppId" value="" />
-                  <option name="projectId" value="" />
-                  <option name="projectNumber" value="" />
+                  <option name="appId" value="com.robotcar.app" />
+                  <option name="mobileSdkAppId" value="1:552972369323:android:1006044a441e2001cde6ee" />
+                  <option name="projectId" value="iot-smart-caa20" />
+                  <option name="projectNumber" value="552972369323" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />

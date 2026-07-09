@@ -17,61 +17,51 @@ fun SensorMonitorScreen(
     vehicleId: Long,
     viewModel: SensorViewModel = viewModel()
 ) {
-    // Quan sát state từ ViewModel
+    // Quan sát state từ Firebase thông qua ViewModel
     val sensorData by viewModel.sensorData.collectAsState()
 
-    // Kích hoạt Polling ngay khi vào màn hình
+    // Kích hoạt Listener Firebase ngay khi vào màn hình
     LaunchedEffect(Unit) {
         viewModel.startPolling(token, vehicleId)
     }
 
     Card(
-        modifier = Modifier.fillMaxWidth().padding(16.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Column(
-            modifier = Modifier.padding(20.dp),
+            modifier = Modifier.padding(16.dp),
             horizontalAlignment = Alignment.Start
         ) {
-            Text("DỮ LIỆU CẢM BIẾN", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(16.dp))
+            Text("DỮ LIỆU TỪ XE", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(12.dp))
 
             if (sensorData == null) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
-                Text("Đang chờ dữ liệu từ xe...", modifier = Modifier.align(Alignment.CenterHorizontally))
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Đang kết nối với xe...", modifier = Modifier.align(Alignment.CenterHorizontally))
             } else {
-                // 1. Cảm biến Siêu âm (Khoảng cách)
-                val distance = sensorData!!.distance
-                val distanceProgress = (distance / 100f).coerceIn(0f, 1f) // Giả sử max là 100cm
-                SensorBar(
-                    label = "Khoảng cách vật cản: ${distance}cm",
-                    progress = distanceProgress,
-                    color = if (distance < 15f) Color.Red else Color(0xFF4CAF50) // Đỏ nếu gần đâm
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // 2. Cảm biến Ánh sáng
-                val light = sensorData!!.lightLevel
-                val lightProgress = (light / 1024f).coerceIn(0f, 1f) // ESP32 ADC thường max là 1024 hoặc 4095
-                SensorBar(
-                    label = "Cường độ ánh sáng: $light",
-                    progress = lightProgress,
-                    color = Color(0xFFFFC107) // Màu vàng
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // 3. Cảm biến Dò Line (Trạng thái)
+                // 1. Trạng thái kết nối
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Trạng thái Dò Line: ", fontWeight = FontWeight.Bold)
+                    Text("Trạng thái: ", fontWeight = FontWeight.Bold)
                     Text(
-                        text = sensorData!!.lineStatus,
-                        color = MaterialTheme.colorScheme.primary,
+                        text = if (sensorData!!.is_online) "Online (Đang hoạt động)" else "Offline (Mất tín hiệu)",
+                        color = if (sensorData!!.is_online) Color(0xFF4CAF50) else Color.Red,
                         fontWeight = FontWeight.ExtraBold
                     )
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 2. Cảm biến Siêu âm (Khoảng cách)
+                val distance = sensorData!!.obstacle_distance
+                val distanceProgress = (distance / 100f).coerceIn(0f, 1f) // Giả sử max là 100cm
+                SensorBar(
+                    label = "Khoảng cách vật cản: ${String.format("%.1f", distance)} cm",
+                    progress = distanceProgress,
+                    color = if (distance < 15f) Color.Red else Color(0xFF4CAF50) // Đỏ nếu gần đâm
+                )
             }
         }
     }

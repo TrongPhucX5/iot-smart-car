@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "552972369323",
+    "firebase_url": "https://iot-smart-caa20-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "iot-smart-caa20",
+    "storage_bucket": "iot-smart-caa20.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:552972369323:android:1006044a441e2001cde6ee",
+        "android_client_info": {
+          "package_name": "com.robotcar.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "552972369323-hdn83vibfocq57r8jtsjq6t8itt37lu4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.robotcar.app",
+            "certificate_hash": "84280b851881f67d218f6239a6fc1eea82452381"
+          }
+        },
+        {
+          "client_id": "552972369323-sp0spg6nefr0mqkp6951adidfj2ucg7t.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCyUiq9jg91xBoTeiwQ8Rwb9lQhdl0O9v4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "552972369323-sp0spg6nefr0mqkp6951adidfj2ucg7t.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -2,39 +2,33 @@ package com.robotcar.app.viewmodel
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import com.robotcar.app.network.CommandRequest
-import com.robotcar.app.network.ModeRequest
-import com.robotcar.app.network.RetrofitClient
-import kotlinx.coroutines.launch
+import com.google.firebase.database.FirebaseDatabase
 
 class VehicleControlViewModel : ViewModel() {
+    private val database = FirebaseDatabase.getInstance().reference
 
     // Hàm bắn lệnh di chuyển
     fun sendCommand(token: String, vehicleId: Long, command: String) {
-        viewModelScope.launch {
-            try {
-                val response = RetrofitClient.instance.sendCommand("Bearer $token", CommandRequest(vehicleId, command))
-                if (response.isSuccessful) {
+        try {
+            // Gửi lệnh lên nhánh: vehicles/{vehicleId}/command
+            database.child("vehicles").child(vehicleId.toString()).child("command").setValue(command)
+                .addOnSuccessListener {
                     Log.d("CONTROL", "Gửi lệnh $command thành công!")
                 }
-            } catch (e: Exception) {
-                Log.e("CONTROL", "Lỗi gửi lệnh: ${e.message}")
-            }
+                .addOnFailureListener { e ->
+                    Log.e("CONTROL", "Lỗi gửi lệnh: ${e.message}")
+                }
+        } catch (e: Exception) {
+            Log.e("CONTROL", "Lỗi Exception: ${e.message}")
         }
     }
 
-    // Hàm đổi chế độ
-    fun changeMode(token: String, vehicleId: Long, mode: String) {
-        viewModelScope.launch {
-            try {
-                val response = RetrofitClient.instance.changeMode("Bearer $token", ModeRequest(vehicleId, mode))
-                if (response.isSuccessful) {
-                    Log.d("CONTROL", "Đổi sang chế độ $mode thành công!")
-                }
-            } catch (e: Exception) {
-                Log.e("CONTROL", "Lỗi đổi chế độ: ${e.message}")
-            }
+    // Hàm chỉnh tốc độ (0 - 255)
+    fun setSpeed(token: String, vehicleId: Long, speed: Int) {
+        try {
+            database.child("vehicles").child(vehicleId.toString()).child("speed").setValue(speed)
+        } catch (e: Exception) {
+            Log.e("CONTROL", "Lỗi chỉnh tốc độ: ${e.message}")
         }
     }
 }

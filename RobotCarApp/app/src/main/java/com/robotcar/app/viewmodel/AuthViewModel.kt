@@ -1,67 +1,91 @@
 package com.robotcar.app.viewmodel
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import com.robotcar.app.network.AuthRequest
-import com.robotcar.app.network.RetrofitClient
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
 
-// 1. Khai báo các trạng thái (State) có thể xảy ra của màn hình Auth
+// Khai báo các trạng thái (State) có thể xảy ra của màn hình Auth
 sealed class AuthState {
     object Idle : AuthState() // Trạng thái chờ, chưa làm gì
     object Loading : AuthState() // Đang xoay vòng chờ API trả lời
-    data class Success(val token: String) : AuthState() // Đăng nhập đúng, nhận JWT Token
+    data class Success(val uid: String) : AuthState() // Đăng nhập đúng, nhận UID từ Firebase
     data class Error(val message: String) : AuthState() // Lỗi sai pass, mất mạng...
 }
 
 class AuthViewModel : ViewModel() {
     
+    // Thể hiện Firebase Auth
+    private val auth = FirebaseAuth.getInstance()
+
     // Biến lưu trữ trạng thái hiện tại (Chỉ ViewModel được phép sửa đổi)
     private val _authState = MutableStateFlow<AuthState>(AuthState.Idle)
     // Biến để giao diện quan sát (Chỉ đọc)
     val authState: StateFlow<AuthState> = _authState.asStateFlow()
 
-    // Hàm thực hiện Đăng Nhập
-    fun login(username: String, pass: String) {
-        // Mở một luồng chạy ngầm (Coroutine) để không làm đơ giao diện
-        viewModelScope.launch {
-            _authState.value = AuthState.Loading // Báo cho UI hiện vòng xoay
-            
-            try {
-                // Gọi API tới Spring Boot
-                val response = RetrofitClient.instance.login(AuthRequest(username, pass))
-                
-                if (response.isSuccessful && response.body() != null) {
-                    val token = response.body()!!.token
-                    _authState.value = AuthState.Success(token) // Báo thành công
+    // Hàm thực hiện Đăng Nhập bằng Firebase
+    fun login(email: String, pass: String) {
+        _authState.value = AuthState.Loading // Báo cho UI hiện vòng xoay
+        
+        auth.signInWithEmailAndPassword(email, pass)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    val user = auth.currentUser
+                    _authState.value = AuthState.Success(user?.uid ?: "") // Báo thành công
                 } else {
-                    _authState.value = AuthState.Error("Sai tài khoản hoặc mật khẩu (Mã lỗi ${response.code()})")
+                    _authState.value = AuthState.Error(task.exception?.message ?: "Lỗi đăng nhập. Vui lòng kiểm tra lại tài khoản hoặc mật khẩu.")
                 }
-            } catch (e: Exception) {
-                _authState.value = AuthState.Error("Lỗi kết nối mạng: Kiểm tra lại WiFi hoặc IP Server")
             }
-        }
     }
 
-    // Hàm thực hiện Đăng Ký
-    fun register(username: String, pass: String) {
-        viewModelScope.launch {
-            _authState.value = AuthState.Loading
-            try {
-                val response = RetrofitClient.instance.register(AuthRequest(username, pass))
-                if (response.isSuccessful) {
-                    // Mẹo: Đăng ký thành công trên Spring Boot thì tự động gọi hàm Login luôn để lấy Token
-                    login(username, pass)
+    // Hàm thực hiện Đăng Ký bằng Firebase
+    fun register(email: String, pass: String) {
+        _authState.value = AuthState.Loading
+        
+        auth.createUserWithEmailAndPassword(email, pass)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    // Đăng ký thành công thì Firebase tự động đăng nhập luôn
+                    val user = auth.currentUser
+                    _authState.value = AuthState.Success(user?.uid ?: "")
                 } else {
-                    _authState.value = AuthState.Error("Tài khoản đã tồn tại (Mã lỗi ${response.code()})")
+                    _authState.value = AuthState.Error(task.exception?.message ?: "Lỗi đăng ký. Tài khoản đã tồn tại hoặc mật khẩu quá yếu.")
                 }
-            } catch (e: Exception) {
-                _authState.value = AuthState.Error("Lỗi kết nối mạng: Kiểm tra lại WiFi hoặc IP Server")
             }
+    }
+
+    // Hàm thực hiện Đăng Nhập bằng Google
+    fun loginWithGoogle(idToken: String) {
+        _authState.value = AuthState.Loading
+        val credential = com.google.firebase.auth.GoogleAuthProvider.getCredential(idToken, null)
+        auth.signInWithCredential(credential)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    val user = auth.currentUser
+                    _authState.value = AuthState.Success(user?.uid ?: "")
+                } else {
+                    _authState.value = AuthState.Error(task.exception?.message ?: "Lỗi đăng nhập Google.")
+                }
+            }
+    }
+
+    // Hàm gửi email Đặt lại mật khẩu
+    fun resetPassword(email: String) {
+        if (email.isBlank()) {
+            _authState.value = AuthState.Error("Vui lòng nhập Email trước khi khôi phục.")
+            return
         }
+        _authState.value = AuthState.Loading
+        auth.sendPasswordResetEmail(email)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    _authState.value = AuthState.Error("Thành công! Vui lòng kiểm tra hộp thư Email của bạn để đổi mật khẩu mới.")
+                    // Ở đây mượn tạm State.Error để hiển thị thông báo text cho tiện (vì Error đang render màu đỏ/vàng trên màn hình)
+                } else {
+                    _authState.value = AuthState.Error(task.exception?.message ?: "Lỗi khôi phục mật khẩu. Email chưa đăng ký?")
+                }
+            }
     }
     
     // Đặt lại trạng thái khi người dùng đã đọc xong thông báo lỗi

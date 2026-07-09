@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -40,6 +41,21 @@ android {
 }
 
 dependencies {
+    // Import the Firebase BoM
+    implementation(platform("com.google.firebase:firebase-bom:33.1.1")) // Thay bằng version mới nhất ổn định (ví dụ 33.1.1)
+
+    // Add the dependency for the Firebase Authentication library
+    // When using the BoM, you don't specify versions in Firebase library dependencies
+    implementation("com.google.firebase:firebase-auth")
+    
+    // Add the dependency for the Firebase Realtime Database library (hoặc thay bằng firestore tuỳ nhu cầu)
+    implementation("com.google.firebase:firebase-database")
+
+    // Google Sign-In
+    implementation("com.google.android.gms:play-services-auth:21.2.0")
+
+    // Location services (GPS)
+    implementation("com.google.android.gms:play-services-location:21.3.0")
 
     // Thư viện chuyển màn hình (Navigation Compose)
     implementation("androidx.navigation:navigation-compose:2.7.7")
